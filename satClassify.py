@@ -74,183 +74,196 @@ LONGINC=.0026
 LATINC=.0024
 
 
-endPoint={"longitude": -120.6750, "latitude": 35.3000}
-startPoint={"longitude": -120.6708, "latitude": 35.2956}
-startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
-startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
-startingTile=Tile(-1,-1,-1,-1,
-startTR,startBL, startPoint,(0,0),"Start")
+# endPoint={"longitude": -120.6750, "latitude": 35.3000}
+# startPoint={"longitude": -120.6708, "latitude": 35.2956}
+# startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
+# startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
+# startingTile=Tile(-1,-1,-1,-1,
+# startTR,startBL, startPoint,(0,0),"Start")
 
-currTile=startingTile
 
 
       
-xdist=int((endPoint["longitude"]-startPoint["longitude"])/(LONGINC/2))
-ydist=int((endPoint['latitude']-startPoint['latitude'])/(LATINC/2))
-print(str(xdist) + " " + str(ydist))
+# xdist=int((endPoint["longitude"]-startPoint["longitude"])/(LONGINC/2))
+# ydist=int((endPoint['latitude']-startPoint['latitude'])/(LATINC/2))
 
-grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
-if(xdist>=0):
-   if(ydist>=0):
-      grid[int(PADDING/2)][int(PADDING/2)]=startingTile
-      startingTile.arrCoord=(int(PADDING/2),int(PADDING/2))
-   else:
-      grid[abs(ydist)+int(PADDING/2)][int(PADDING/2)]=startingTile
-      startingTile.arrCoord=(abs(ydist)+int(PADDING/2),int(PADDING/2))
-else:
-   if(ydist>=0):
-      grid[int(PADDING/2)][abs(xdist)+int(PADDING/2)]=startingTile
-      startingTile.arrCoord=(int(PADDING/2),abs(xdist)+int(PADDING/2))
-   else:
-      grid[abs(ydist)+int(PADDING/2)][abs(xdist)+int(PADDING/2)]=startingTile
-      startingTile.arrCoord=(abs(ydist)+int(PADDING/2),abs(xdist)+int(PADDING/2),)
-print(startingTile.arrCoord)   
-grid[startingTile.arrCoord[0]+ydist][startingTile.arrCoord[1]+xdist]=Tile(-1,-1,-1,-1,-1,-1,endPoint,(-1,-1),"End")
-arr = np.array(grid)
-print('\n'.join(['\t'.join([str(cell) for cell in row]) for row in arr[::-1,:]]))
-print('\n') 
+# grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
 
-accumTR=copy.copy(startingTile.TopRight)
-accumBL=copy.copy(startingTile.BottomLeft)
-accumCenter=copy.copy(startingTile.center)
-for i in range(startingTile.arrCoord[0],len(grid)):
-    accumTR["latitude"]+=LATINC
-    accumBL["latitude"]+=LATINC
-    accumCenter["latitude"]+=LATINC
-    accumTR["longitude"]=startingTile.TopRight["longitude"]
-    accumBL["longitude"]=startingTile.BottomLeft["longitude"]
-    accumCenter["longitude"]=startingTile.center["longitude"]
-    for j in range(startingTile.arrCoord[1],len(grid[0])):
-        if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
-            accumTR["latitude"]-=LATINC
-            accumBL["latitude"]-=LATINC
-            accumCenter["latitude"]-=LATINC
+def initGrid(grid,xdist,ydist,startingTile,endPoint):
+    if(xdist>=0):
+        if(ydist>=0):
+            grid[int(PADDING/2)][int(PADDING/2)]=startingTile
+            startingTile.arrCoord=(int(PADDING/2),int(PADDING/2))
         else:
-            if(j!=startingTile.arrCoord[1]):
-                accumTR["longitude"]+=LATINC
-                accumBL["longitude"]+=LATINC
-                accumCenter["longitude"]+=LATINC
-            grid[i][j].arrCoord=(i,j)
-            grid[i][j].TopRight=copy.copy(accumTR)
-            grid[i][j].BottomLeft=copy.copy(accumBL)
-            grid[i][j].center=copy.copy(accumCenter)
-            
-    print("")
-
-accumTR=copy.copy(startingTile.TopRight)
-accumBL=copy.copy(startingTile.BottomLeft)
-accumCenter=copy.copy(startingTile.center)
-for i in range(startingTile.arrCoord[0]-1,-1,-1):
-    accumTR["latitude"]-=LATINC
-    accumBL["latitude"]-=LATINC
-    accumCenter["latitude"]-=LATINC
-    accumTR["longitude"]=startingTile.TopRight["longitude"]
-    accumBL["longitude"]=startingTile.BottomLeft["longitude"]
-    accumCenter["longitude"]=startingTile.center["longitude"]
-    for j in range(startingTile.arrCoord[1]-1,-1,-1):
-        if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
-            accumTR["latitude"]+=LATINC
-            accumBL["latitude"]+=LATINC
-            accumCenter["latitude"]+=LATINC
+            grid[abs(ydist)+int(PADDING/2)][int(PADDING/2)]=startingTile
+            startingTile.arrCoord=(abs(ydist)+int(PADDING/2),int(PADDING/2))
+    else:
+        if(ydist>=0):
+            grid[int(PADDING/2)][abs(xdist)+int(PADDING/2)]=startingTile
+            startingTile.arrCoord=(int(PADDING/2),abs(xdist)+int(PADDING/2))
         else:
-            if(j!=startingTile.arrCoord[1]):
-                accumTR["longitude"]-=LATINC
-                accumBL["longitude"]-=LATINC
-                accumCenter["longitude"]-=LATINC
-            grid[i][j].arrCoord=(i,j)
-            grid[i][j].TopRight=copy.copy(accumTR)
-            grid[i][j].BottomLeft=copy.copy(accumBL)
-            grid[i][j].center=copy.copy(accumCenter)
+            grid[abs(ydist)+int(PADDING/2)][abs(xdist)+int(PADDING/2)]=startingTile
+            startingTile.arrCoord=(abs(ydist)+int(PADDING/2),abs(xdist)+int(PADDING/2),)
+    print(startingTile.arrCoord)   
+    grid[startingTile.arrCoord[0]+ydist][startingTile.arrCoord[1]+xdist]=Tile(-1,-1,-1,-1,-1,-1,endPoint,(-1,-1),"End")
+    arr = np.array(grid)
+    print('\n'.join(['\t'.join([str(cell) for cell in row]) for row in arr[::-1,:]]))
+    print('\n') 
+
+def genGridCoords(grid,startingTile):
+    accumTR=copy.copy(startingTile.TopRight)
+    accumBL=copy.copy(startingTile.BottomLeft)
+    accumCenter=copy.copy(startingTile.center)
+    for i in range(startingTile.arrCoord[0],len(grid)):
+        accumTR["latitude"]+=LATINC
+        accumBL["latitude"]+=LATINC
+        accumCenter["latitude"]+=LATINC
+        accumTR["longitude"]=startingTile.TopRight["longitude"]
+        accumBL["longitude"]=startingTile.BottomLeft["longitude"]
+        accumCenter["longitude"]=startingTile.center["longitude"]
+        for j in range(startingTile.arrCoord[1],len(grid[0])):
+            if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
+                accumTR["latitude"]-=LATINC
+                accumBL["latitude"]-=LATINC
+                accumCenter["latitude"]-=LATINC
+            else:
+                if(j!=startingTile.arrCoord[1]):
+                    accumTR["longitude"]+=LATINC
+                    accumBL["longitude"]+=LATINC
+                    accumCenter["longitude"]+=LATINC
+                grid[i][j].arrCoord=(i,j)
+                grid[i][j].TopRight=copy.copy(accumTR)
+                grid[i][j].BottomLeft=copy.copy(accumBL)
+                grid[i][j].center=copy.copy(accumCenter)
+                
+        print("")
+
+    accumTR=copy.copy(startingTile.TopRight)
+    accumBL=copy.copy(startingTile.BottomLeft)
+    accumCenter=copy.copy(startingTile.center)
+    for i in range(startingTile.arrCoord[0]-1,-1,-1):
+        accumTR["latitude"]-=LATINC
+        accumBL["latitude"]-=LATINC
+        accumCenter["latitude"]-=LATINC
+        accumTR["longitude"]=startingTile.TopRight["longitude"]
+        accumBL["longitude"]=startingTile.BottomLeft["longitude"]
+        accumCenter["longitude"]=startingTile.center["longitude"]
+        for j in range(startingTile.arrCoord[1]-1,-1,-1):
+            if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
+                accumTR["latitude"]+=LATINC
+                accumBL["latitude"]+=LATINC
+                accumCenter["latitude"]+=LATINC
+            else:
+                if(j!=startingTile.arrCoord[1]):
+                    accumTR["longitude"]-=LATINC
+                    accumBL["longitude"]-=LATINC
+                    accumCenter["longitude"]-=LATINC
+                grid[i][j].arrCoord=(i,j)
+                grid[i][j].TopRight=copy.copy(accumTR)
+                grid[i][j].BottomLeft=copy.copy(accumBL)
+                grid[i][j].center=copy.copy(accumCenter)
+        print("")
+
+    accumTR=copy.copy(startingTile.TopRight)
+    accumBL=copy.copy(startingTile.BottomLeft)
+    accumCenter=copy.copy(startingTile.center)
+    for i in range(startingTile.arrCoord[0],len(grid)):
+        accumTR["latitude"]+=LATINC
+        accumBL["latitude"]+=LATINC
+        accumCenter["latitude"]+=LATINC
+        accumTR["longitude"]=startingTile.TopRight["longitude"]
+        accumBL["longitude"]=startingTile.BottomLeft["longitude"]
+        accumCenter["longitude"]=startingTile.center["longitude"]
+        for j in range(startingTile.arrCoord[1],-1,-1):
+            if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
+                accumTR["latitude"]-=LATINC
+                accumBL["latitude"]-=LATINC
+                accumCenter["latitude"]-=LATINC
+            else:
+                if(j!=startingTile.arrCoord[1]):
+                    accumTR["longitude"]-=LATINC
+                    accumBL["longitude"]-=LATINC
+                    accumCenter["longitude"]-=LATINC
+                grid[i][j].arrCoord=(i,j)
+                grid[i][j].TopRight=copy.copy(accumTR)
+                grid[i][j].BottomLeft=copy.copy(accumBL)
+                grid[i][j].center=copy.copy(accumCenter)
+
+        print("")
+    accumTR=copy.copy(startingTile.TopRight)
+    accumBL=copy.copy(startingTile.BottomLeft)
+    accumCenter=copy.copy(startingTile.center)
+    for i in range(startingTile.arrCoord[0]-1,-1,-1):
+        accumTR["latitude"]-=LATINC
+        accumBL["latitude"]-=LATINC
+        accumCenter["latitude"]-=LATINC
+        accumTR["longitude"]=startingTile.TopRight["longitude"]
+        accumBL["longitude"]=startingTile.BottomLeft["longitude"]
+        accumCenter["longitude"]=startingTile.center["longitude"]
+        for j in range(startingTile.arrCoord[1],len(grid[0])):
+            if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
+                accumTR["latitude"]-=LATINC
+                accumBL["latitude"]-=LATINC
+                accumCenter["latitude"]-=LATINC
+            else:
+                if(j!=startingTile.arrCoord[1]):
+                    accumTR["longitude"]+=LATINC
+                    accumBL["longitude"]+=LATINC
+                    accumCenter["longitude"]+=LATINC
+                grid[i][j].arrCoord=(i,j)
+                grid[i][j].TopRight=copy.copy(accumTR)
+                grid[i][j].BottomLeft=copy.copy(accumBL)
+                grid[i][j].center=copy.copy(accumCenter)
+        print("")
+    arr = np.array(grid)
+    print('\n')           
+    print('\n'.join(['\t'.join([(str(cell)) for cell in row]) for row in arr[::-1,:]]))
+    print('\n')  
+    print('\n')  
+    print('\n')
+
+def identifyGridTiles(grid):
+    index=0  
+    for i in tqdm(grid):
+        for j in i:
+
+            response = requests.get(f'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/[{j.BottomLeft["longitude"]},{j.BottomLeft["latitude"]},{j.TopRight["longitude"]},{j.TopRight["latitude"]}]/224x224?padding=0&access_token={mapbox}')
+            img = Image.open(BytesIO(response.content))
+            img  = img.resize((224, 224))
+            output = open(f'{index}.jpg',"wb")
+            index+=1
+            output.write(response.content)
+            output.close()
+            classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
+            j.terrain=classifier(img)[0]["label"]
+            response = requests.get(f'https://maps.googleapis.com/maps/api/elevation/json?locations={j.center["latitude"]}%2C{j.center["longitude"]}&key={apikey}')
+            j.elevation=response.json()["results"][0]['elevation']
     print("")
-
-accumTR=copy.copy(startingTile.TopRight)
-accumBL=copy.copy(startingTile.BottomLeft)
-accumCenter=copy.copy(startingTile.center)
-for i in range(startingTile.arrCoord[0],len(grid)):
-    accumTR["latitude"]+=LATINC
-    accumBL["latitude"]+=LATINC
-    accumCenter["latitude"]+=LATINC
-    accumTR["longitude"]=startingTile.TopRight["longitude"]
-    accumBL["longitude"]=startingTile.BottomLeft["longitude"]
-    accumCenter["longitude"]=startingTile.center["longitude"]
-    for j in range(startingTile.arrCoord[1],-1,-1):
-        if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
-            accumTR["latitude"]-=LATINC
-            accumBL["latitude"]-=LATINC
-            accumCenter["latitude"]-=LATINC
-        else:
-            if(j!=startingTile.arrCoord[1]):
-                accumTR["longitude"]-=LATINC
-                accumBL["longitude"]-=LATINC
-                accumCenter["longitude"]-=LATINC
-            grid[i][j].arrCoord=(i,j)
-            grid[i][j].TopRight=copy.copy(accumTR)
-            grid[i][j].BottomLeft=copy.copy(accumBL)
-            grid[i][j].center=copy.copy(accumCenter)
-
     print("")
-accumTR=copy.copy(startingTile.TopRight)
-accumBL=copy.copy(startingTile.BottomLeft)
-accumCenter=copy.copy(startingTile.center)
-for i in range(startingTile.arrCoord[0]-1,-1,-1):
-    accumTR["latitude"]-=LATINC
-    accumBL["latitude"]-=LATINC
-    accumCenter["latitude"]-=LATINC
-    accumTR["longitude"]=startingTile.TopRight["longitude"]
-    accumBL["longitude"]=startingTile.BottomLeft["longitude"]
-    accumCenter["longitude"]=startingTile.center["longitude"]
-    for j in range(startingTile.arrCoord[1],len(grid[0])):
-        if( (i==startingTile.arrCoord[0] and j==startingTile.arrCoord[1])):
-            accumTR["latitude"]-=LATINC
-            accumBL["latitude"]-=LATINC
-            accumCenter["latitude"]-=LATINC
-        else:
-            if(j!=startingTile.arrCoord[1]):
-                accumTR["longitude"]+=LATINC
-                accumBL["longitude"]+=LATINC
-                accumCenter["longitude"]+=LATINC
-            grid[i][j].arrCoord=(i,j)
-            grid[i][j].TopRight=copy.copy(accumTR)
-            grid[i][j].BottomLeft=copy.copy(accumBL)
-            grid[i][j].center=copy.copy(accumCenter)
-    print("")
-arr = np.array(grid)
-print('\n')           
-print('\n'.join(['\t'.join([(str(cell)) for cell in row]) for row in arr[::-1,:]]))
-print('\n')  
-print('\n')  
-print('\n')
-index=0  
-for i in tqdm(grid):
-    for j in i:
-
-        response = requests.get(f'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/[{j.BottomLeft["longitude"]},{j.BottomLeft["latitude"]},{j.TopRight["longitude"]},{j.TopRight["latitude"]}]/224x224?padding=0&access_token={mapbox}')
-        img = Image.open(BytesIO(response.content))
-        img  = img.resize((224, 224))
-        output = open(f'{index}.jpg',"wb")
-        index+=1
-        output.write(response.content)
-        output.close()
-        classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
-        j.terrain=classifier(img)[0]["label"]
-        response = requests.get(f'https://maps.googleapis.com/maps/api/elevation/json?locations={j.center["latitude"]}%2C{j.center["longitude"]}&key={apikey}')
-        j.elevation=response.json()["results"][0]['elevation']
-print("")
-print("")
-for i in tqdm(reversed(grid)):
-    for j in i:
-        if j.type!=-1:
-            print(j.terrain,j.elevation,j.type, end="\t\t")
-        else:
-            print(j.terrain,j.elevation, end="\t\t")
-    print("")
-
-# response = requests.get(f'https://maps.googleapis.com/maps/api/staticmap?size=600x400&visible=41.320004%2C2.069526%7C41.469576%2C2.22801&key={apikey}')
-# response = requests.get(f'https://maps.googleapis.com/maps/api/staticmap?size=600x400&visible=41.320004%2C2.069526%7C41.469576%2C2.22801&key=AIzaSyB7iQIx-AjD_yFaoXt-yK8PiXsD7eKw6EA')
-# response = requests.get(f'GET: https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/[-123.1345,38.9246,-123.0655,38.9726]/224x224?access_token={mapbox}')
-# img = Image.open(BytesIO(response.content))
-# img  = img.resize((224, 224))
-# classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
-# print(classifier(img))
+    for i in tqdm(reversed(grid)):
+        for j in i:
+            if j.type!=-1:
+                print(j.terrain,j.elevation,j.type, end="\t\t")
+            else:
+                print(j.terrain,j.elevation, end="\t\t")
+        print("")
 
 
+def main():
+    endPoint={"longitude": -120.6750, "latitude": 35.3000}
+    startPoint={"longitude": -120.6708, "latitude": 35.2956}
+    startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
+    startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
+    startingTile=Tile(-1,-1,-1,-1,
+    startTR,startBL, startPoint,(0,0),"Start")
+    xdist=int((endPoint["longitude"]-startPoint["longitude"])/(LONGINC/2))
+    ydist=int((endPoint['latitude']-startPoint['latitude'])/(LATINC/2)) 
+    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
+    
+    #initialize start and end points on grid
+    initGrid(grid,xdist,ydist,startingTile,endPoint)
+    genGridCoords(grid,startingTile)
+    identifyGridTiles(grid)
+
+
+main()

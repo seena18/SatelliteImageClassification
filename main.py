@@ -8,6 +8,8 @@ import numpy as np
 from collections import deque as queue
 import copy
 from tqdm import tqdm
+from fastapi import FastAPI
+
 def isEndpoint(nextTile,endpoint):
   if nextTile==-1:
     return False
@@ -249,9 +251,13 @@ def identifyGridTiles(grid):
         print("")
 
 
-def main():
-    endPoint={"longitude": -120.6750, "latitude": 35.3000}
-    startPoint={"longitude": -120.6708, "latitude": 35.2956}
+
+app = FastAPI()
+
+@app.get("/{startLong}/{startLat}/{endLong}/{endLat}")
+async def root(startLong,startLat,endLong,endLat):
+    endPoint={"longitude": endLong, "latitude": endLat}
+    startPoint={"longitude": startLong, "latitude": startLat}
     startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
     startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
     startingTile=Tile(-1,-1,-1,-1,
@@ -259,11 +265,8 @@ def main():
     xdist=int((endPoint["longitude"]-startPoint["longitude"])/(LONGINC/2))
     ydist=int((endPoint['latitude']-startPoint['latitude'])/(LATINC/2)) 
     grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
-    
     #initialize start and end points on grid
     initGrid(grid,xdist,ydist,startingTile,endPoint)
     genGridCoords(grid,startingTile)
     identifyGridTiles(grid)
-
-
-main()
+    return grid

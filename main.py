@@ -59,9 +59,9 @@ class Tile:
         self.BottomLeft = BottomLeft
         self.center= center
         self.arrCoord=arrCoord
-        self.type=type
-        self.terrain=-1
-        self.elevation=-1
+        self.type=None
+        self.terrain=None
+        self.elevation=None
     def __str__(self):
         return str(self.arrCoord)
     
@@ -257,7 +257,7 @@ async def root(startLong:float,startLat:float,endLong:float,endLat:float):
     xdist=round((endPoint["longitude"]-startPoint["longitude"])/(LONGINC))
     ydist=round((endPoint['latitude']-startPoint['latitude'])/(LATINC) )
     print(xdist,ydist)
-    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
+    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
     #initialize start and end points on grid
     initGrid(grid,xdist,ydist,startingTile,endPoint)
     genGridCoords(grid,startingTile)

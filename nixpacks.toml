@@ -1,2 +1,2 @@
 [phases.build]
-cmds = ['python -m ensurepip --upgrade','uvicorn main:app --reload']
+cmds = ['python -m ensurepip --upgrade','pip install transformers']

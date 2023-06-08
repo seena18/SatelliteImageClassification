@@ -1,2 +1,2 @@
 [phases.build]
-cmds = ['python -m ensurepip --upgrade','python -m pip install transformers pillow fastapi torch torchvision torchaudio']
+cmds = ['python -m ensurepip --upgrade','python -m pip install "uvicorn[standard]" transformers pillow fastapi torch torchvision torchaudio', ]

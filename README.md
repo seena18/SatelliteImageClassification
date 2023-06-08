@@ -1,6 +1,6 @@
 
 
-**Map Classiﬁcaꢀon API Manual and Documentaꢀon**
+**Map Classiﬁcation API Manual and Documentation**
 
 **Seena Abed**
 

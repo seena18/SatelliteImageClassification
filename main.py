@@ -59,7 +59,7 @@ class Tile:
         self.BottomLeft = BottomLeft
         self.center= center
         self.arrCoord=arrCoord
-        self.type=None
+        self.type=type
         self.terrain=None
         self.elevation=None
     def __str__(self):
@@ -210,12 +210,17 @@ def genGridCoords(grid,startingTile):
     print('\n')
 
 def identifyGridTiles(grid):
+    index=0
     for i in tqdm(grid):
         for j in i:
 
             response = requests.get(f'https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/[{j.BottomLeft["longitude"]},{j.BottomLeft["latitude"]},{j.TopRight["longitude"]},{j.TopRight["latitude"]}]/224x224?padding=0&access_token={mapbox}')
             img = Image.open(BytesIO(response.content))
             img  = img.resize((224, 224))
+            output = open(f'{index}.jpg',"wb")
+            index+=1
+            output.write(response.content)
+            output.close()
             classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
             j.terrain=classifier(img)[0]["label"]
             response = requests.get(f'https://maps.googleapis.com/maps/api/elevation/json?locations={j.center["latitude"]}%2C{j.center["longitude"]}&key={apikey}')
@@ -285,7 +290,7 @@ def main():
     xdist=round((endPoint["longitude"]-startPoint["longitude"])/(LONGINC))
     ydist=round((endPoint['latitude']-startPoint['latitude'])/(LATINC) )
     print(xdist,ydist)
-    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),-1) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
+    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
     #initialize start and end points on grid
     initGrid(grid,xdist,ydist,startingTile,endPoint)
     genGridCoords(grid,startingTile)

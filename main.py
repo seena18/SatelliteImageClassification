@@ -54,7 +54,7 @@ def withinLat(y1, y2, y):
         return False
 class Tile:
     center: dict
-    def __init__(self, north, south,east,west,TopRight,BottomLeft,center,arrCoord,type):
+    def __init__(self,TopRight,BottomLeft,center,arrCoord,type):
         self.TopRight = TopRight
         self.BottomLeft = BottomLeft
         self.center= center
@@ -65,17 +65,24 @@ class Tile:
     def __str__(self):
         return str(self.arrCoord)
     
+googleapikey="ENTER_YOUR_API_KEY_FOR_GOOGLE_MAPS"
+mapbox="ENTER_YOUR_API_KEY_FOR_MAPBOX"
 
-apikey="AIzaSyB7iQIx-AjD_yFaoXt-yK8PiXsD7eKw6EA"
-mapqkey="Ps637jCnjAil3mRyCsuQT98Qss6iIsIK"
-mapbox="pk.eyJ1Ijoic2VlbmExOCIsImEiOiJjbGk2Z2ozc3IyM2kyM2Rtdm5uaTBsd2Q4In0.9UZWXUge8N72-5ZRDgFBFA"
 PADDING = 2
+#LONGINC and LATINC are the the units of latitude and longitude which represent the dimensions of a tile.
+#When procedurally generating a grid of tiles, adjacent tile coordinates are defined by incrementing or decrement by LONGINC,LATINC
+#The distance of one degree of latitude remains fairly constant no matter where you are on Earth. 
+#However, degrees of longitude vary greatly in distance depending on where you are on earth.
+
+#TODO: figure out how to convert users tile size preference into bounding box units of latitude and longitude.
+#For example if a user wants a tile to be 1 square mile.
+#We would want to calculate the appropriate lat and long degrees to represent 1 square mile depending on where the coordinate is located on earth
 LONGINC=.0026
 LATINC=.0024
 
 
 
-
+#This function basically determines where the start and end point are located relative to one another, and places them in their appropriate corner of the grid
 def initGrid(grid,xdist,ydist,startingTile,endPoint):
     if(xdist>=0):
         if(ydist>=0):
@@ -92,11 +99,15 @@ def initGrid(grid,xdist,ydist,startingTile,endPoint):
             grid[abs(ydist)+int(PADDING/2)][abs(xdist)+int(PADDING/2)]=startingTile
             startingTile.arrCoord=(abs(ydist)+int(PADDING/2),abs(xdist)+int(PADDING/2),)
     print(startingTile.arrCoord)   
-    grid[startingTile.arrCoord[0]+ydist][startingTile.arrCoord[1]+xdist]=Tile(-1,-1,-1,-1,-1,-1,endPoint,(-1,-1),"End")
+    grid[startingTile.arrCoord[0]+ydist][startingTile.arrCoord[1]+xdist]=Tile(-1,-1,endPoint,(-1,-1),"End")
     arr = np.array(grid)
     print('\n'.join(['\t'.join([str(cell) for cell in row]) for row in arr[::-1,:]]))
     print('\n') 
 
+#This function goes through every other tile on the grid and calculates the center coordinate and bounding box of each tile.
+#This is so that the bounding box information of each tile, can later be used with MapBox API to retrive the respective satellite image associated with each tile
+
+#TODO: There is probably a cleaner way to do this
 def genGridCoords(grid,startingTile):
     accumTR=copy.copy(startingTile.TopRight)
     accumBL=copy.copy(startingTile.BottomLeft)
@@ -209,6 +220,10 @@ def genGridCoords(grid,startingTile):
     print('\n')  
     print('\n')
 
+#This function retrieves the associated satellite image of each tile in the grid, and uses an image detection model trained on hugging-face to classify what sort of terrain/area the tile is.
+#TODO: the hugging-face model returns 5 possible classiffication in order of confidence values. Right now the API, chooses the label of the classification which the model is most confident about.
+#However, it may be useful to incorporate all 5 classifications and their confidence values
+
 def identifyGridTiles(grid):
     index=0
     for i in tqdm(grid):
@@ -224,6 +239,8 @@ def identifyGridTiles(grid):
             classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
             j.terrain=classifier(img)[0]["label"]
             response = requests.get(f'https://maps.googleapis.com/maps/api/elevation/json?locations={j.center["latitude"]}%2C{j.center["longitude"]}&key={apikey}')
+            print(response.json())
+
             j.elevation=response.json()["results"][0]['elevation']
     print("")
     print("")
@@ -244,55 +261,72 @@ def identifyCoord(tile):
     classifier = pipeline("image-classification", model="seena18/tier3_satellite_image_classification")
     j.terrain=classifier(img)[0]["label"]
     response = requests.get(f'https://maps.googleapis.com/maps/api/elevation/json?locations={j.center["latitude"]}%2C{j.center["longitude"]}&key={apikey}')
+    print(response)
     j.elevation=response.json()["results"][0]['elevation']
     res={"coordinates": j.center,"terrain": j.terrain, "elevation": j.elevation}
     return res
 
 app = FastAPI()
-
+#api call for when the user wants to provide a starting point and an endpoint
 @app.get("/{startLong}/{startLat}/{endLong}/{endLat}")
 async def root(startLong:float,startLat:float,endLong:float,endLat:float):
 
+    #initialize starting point and end point objects
     endPoint={"longitude": endLong, "latitude": endLat}
     startPoint={"longitude": startLong, "latitude": startLat}
+
+    #initialize starting point bounding box objects
+    #TR is Top Right corner
+    #BL is Bottom Left corner
     startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
     startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
-    startingTile=Tile(-1,-1,-1,-1,
-    startTR,startBL, startPoint,(0,0),"Start")
+    
+    #initialize the starting tile object of the grid, with the information from the starting point
+    startingTile=Tile(startTR,startBL, startPoint,(0,0),"Start")
+
+    #calculate the x and y components of distance in terms of the number of tiles between the start point and the end point
     xdist=round((endPoint["longitude"]-startPoint["longitude"])/(LONGINC))
     ydist=round((endPoint['latitude']-startPoint['latitude'])/(LATINC) )
-    print(xdist,ydist)
-    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
-    #initialize start and end points on grid
+
+    #initialize grid object, the number of tiles in the grid matrix should be atleast as large as the tile-wise distance between the start and end points plus any additional padding.
+    #The padding value is currently hardcoded as a global variable into the API to add 1 extra tile of padding around the edges of the grid, but this could easily be change so that user can choose their own padding value.
+    grid = [[Tile(-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
+    
+    #initialize start and end point tiles on the grid
     initGrid(grid,xdist,ydist,startingTile,endPoint)
+    
+    #calculate the coordinates and bounding boxes for the rest of the tiles in the grid that are not starting and ending tiles
     genGridCoords(grid,startingTile)
+    
+    #go through each tile and evaluate it with the image detection model
     identifyGridTiles(grid)
     return grid
 
+#api call for when the user wants to identify a single coordinate
 @app.get("/{startLong}/{startLat}")
 async def root(startLong: float,startLat: float):
     startPoint={"longitude": startLong, "latitude": startLat}
     startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
     startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
-    startingTile=Tile(-1,-1,-1,-1,
-    startTR,startBL, startPoint,(0,0),"Start")
+    startingTile=Tile(startTR,startBL, startPoint,(0,0),"Start")
     return identifyCoord(startingTile)
 
-
-
+#main function is for testing
 def main():
     endPoint={"longitude": .0026, "latitude": .0024}
     startPoint={"longitude": 0, "latitude": 0}
     startTR={"longitude": startPoint["longitude"] +(LONGINC/2), "latitude":  startPoint['latitude']+(LATINC/2)}
     startBL={"longitude": startPoint["longitude"] -(LONGINC/2), "latitude":  startPoint['latitude']-(LATINC/2)}
-    startingTile=Tile(-1,-1,-1,-1,
-    startTR,startBL, startPoint,(0,0),"Start")
+    startingTile=Tile(startTR,startBL, startPoint,(0,0),"Start")
     xdist=round((endPoint["longitude"]-startPoint["longitude"])/(LONGINC))
     ydist=round((endPoint['latitude']-startPoint['latitude'])/(LATINC) )
     print(xdist,ydist)
-    grid = [[Tile(-1,-1,-1,-1,-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
+    grid = [[Tile(-1,-1,-1,(0,0),None) for j in range((abs(xdist)+1+PADDING))] for i in range(abs(ydist)+1+PADDING)]
     #initialize start and end points on grid
     initGrid(grid,xdist,ydist,startingTile,endPoint)
     genGridCoords(grid,startingTile)
     identifyGridTiles(grid)
 
+
+main()
+#To test the code with the main function without running the API server, use the following linux command

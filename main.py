@@ -74,7 +74,7 @@ PADDING = 2
 #The distance of one degree of latitude remains fairly constant no matter where you are on Earth. 
 #However, degrees of longitude vary greatly in distance depending on where you are on earth.
 
-#TODO: figure out how to convert users tile size preference into bounding box units of latitude and longitude.
+#TODO: figure out how to convert user's tile size preference into bounding box units of latitude and longitude.
 #For example if a user wants a tile to be 1 square mile.
 #We would want to calculate the appropriate lat and long degrees to represent 1 square mile depending on where the coordinate is located on earth
 LONGINC=.0026
@@ -329,4 +329,5 @@ def main():
 
 
 main()
-#To test the code with the main function without running the API server, use the following linux command
+#To test the code with the main function without running the API server, use the following linux command: python3 main.py
+#To run the API server, comment out line 331 and use the following command: uvicorn main:app --reload
